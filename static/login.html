@@ -4,11 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login — To Do List</title>
+  <link rel="stylesheet" href="/static/src/output.css" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.7s ease-out;
+    }
+  </style>
 </head>
 <body class="min-h-screen bg-gray-900 text-white flex flex-col justify-center px-6 py-12">
 
-  <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+  <!-- Splash Screen -->
+  <div id="splash" class="fixed inset-0 bg-gray-900 flex flex-col justify-center items-center z-50 transition-opacity duration-500 ease-in-out">
+    <img src="/static/img/icon.png" class="h-24 w-24 mb-4">
+    <h1 class="text-4xl font-extrabold text-white">CHECKO<span class="text-indigo-500">.</span></h1>
+    <p class="text-indigo-400 font-semibold text-xs tracking-widest uppercase">Jalani Harimu Dengan Lebih Terencana</p>
+  </div>
+
+  <div id="main-content" class="hidden scale-95 transition-all duration-700 ease-out">
     <div class="flex justify-center">
       <img src="/static/img/icon.png" class="h-24 w-24">
     </div>
@@ -16,7 +33,6 @@
     <h1 class="text-center text-4xl font-extrabold text-white">CHECKO<span class="text-indigo-500">.</span></h1>
     <p class="text-center text-indigo-400 font-semibold text-xs tracking-widest uppercase mb-2">Jalani Harimu Dengan Lebih Terencana</p>
     <h2 class="mt-6 text-center text-sm font-medium text-gray-400">Masuk ke akun kamu</h2>
-  </div>
 
   <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-sm">
     <div id="alert" class="hidden mb-5 rounded-lg px-4 py-3 text-sm font-medium border"></div>
@@ -48,6 +64,7 @@
       <a href="/register.html" class="font-semibold text-indigo-400 hover:text-indigo-300 transition">Daftar sekarang</a>
     </p>
   </div>
+</div>
 
   <script>
     if (localStorage.getItem('token')) location.href = '/dashboard.html';
@@ -91,6 +108,18 @@
         document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); })
       );
     });
-  </script>
+    // Splash screen transition
+    window.onload = function() {
+      setTimeout(() => {
+        const splash = document.getElementById('splash');
+        splash.classList.add('opacity-0');
+        setTimeout(() => {
+          splash.style.display = 'none';
+          const mainContent = document.getElementById('main-content');
+          mainContent.classList.remove('hidden');
+          mainContent.classList.add('animate-fade-in');
+        }, 500);
+      }, 2000);
+    };  </script>
 </body>
 </html>
