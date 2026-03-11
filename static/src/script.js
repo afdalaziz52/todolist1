@@ -697,6 +697,8 @@
 
     function showInAppNotification(icon, title, message, type = 'info') {
       const container = document.getElementById('notification-container');
+      if (!container) return;
+      
       const notifId = 'notif_' + Date.now();
       
       const colors = {
@@ -709,11 +711,15 @@
       const notifEl = document.createElement('div');
       notifEl.id = notifId;
       notifEl.className = `notification-item ${color.border}`;
+      
+      const escTitle = String(title).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      const escMessage = String(message).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      
       notifEl.innerHTML = `
         <div class="text-2xl ${color.icon} flex-shrink-0">${icon}</div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-bold text-white mb-0.5">${esc(title)}</p>
-          <p class="text-xs text-gray-400 leading-relaxed">${esc(message)}</p>
+          <p class="text-sm font-bold text-white mb-0.5">${escTitle}</p>
+          <p class="text-xs text-gray-400 leading-relaxed">${escMessage}</p>
         </div>
         <button onclick="removeInAppNotification('${notifId}')" class="text-gray-500 hover:text-white transition flex-shrink-0">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
