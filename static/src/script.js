@@ -103,7 +103,40 @@
     function closeAllDropdowns() {
       document.getElementById('cat-dropdown').classList.add('hidden');
       document.getElementById('edit-cat-dropdown').classList.add('hidden');
+      document.getElementById('priority-dropdown').classList.add('hidden');
+      document.getElementById('edit-priority-dropdown').classList.add('hidden');
     }
+
+    // ── Priority handlers ────────────────────────────────────
+    function togglePriorityDropdown() {
+      const dd = document.getElementById('priority-dropdown');
+      if (!dd) return;
+      const isHidden = dd.classList.contains('hidden');
+      closeAllDropdowns();
+      if (isHidden) dd.classList.remove('hidden');
+    }
+
+    function toggleEditPriorityDropdown() {
+      const dd = document.getElementById('edit-priority-dropdown');
+      if (!dd) return;
+      const isHidden = dd.classList.contains('hidden');
+      closeAllDropdowns();
+      if (isHidden) dd.classList.remove('hidden');
+    }
+
+    function selectPriority(value, dropdownId, hiddenId, dotId, labelId) {
+      document.getElementById(hiddenId).value = value;
+      const colors = { high: 'bg-red-400', medium: 'bg-yellow-400', low: 'bg-green-400' };
+      const labels = { high: 'High', medium: 'Medium', low: 'Low' };
+      document.getElementById(dotId).className = `w-2 h-2 rounded-full ${colors[value]} flex-shrink-0`;
+      document.getElementById(labelId).textContent = labels[value];
+      document.getElementById(dropdownId).classList.add('hidden');
+    }
+
+    // Expose to window
+    window.togglePriorityDropdown = togglePriorityDropdown;
+    window.toggleEditPriorityDropdown = toggleEditPriorityDropdown;
+    window.selectPriority = selectPriority;
     // ── Load tasks ───────────────────────────────────────────
     async function loadTasks() {
       show('loading-state'); hide('task-list'); hide('empty-state');
@@ -124,8 +157,10 @@
       const titleEl  = document.getElementById('task-input');
       const catEl    = document.getElementById('cat-select');
       const customEl = document.getElementById('custom-input');
+      const priorityEl = document.getElementById('priority-select');
       const title    = titleEl.value.trim();
       const category = catEl.value;
+      const priority = priorityEl.value;
 
       if (!title) { toast('Tulis dulu tugasnya!', 'err'); titleEl.focus(); return; }
       if (!category) { toast('Pilih kategori dulu!', 'err'); return; }
@@ -134,7 +169,7 @@
       }
 
       const deadlineEl = document.getElementById('deadline-input');
-      const body = { title, category };
+      const body = { title, category, priority };
       if (category === 'other') body.custom_category = customEl.value.trim();
       if (deadlineEl.value) body.deadline = new Date(deadlineEl.value).toISOString();
 
@@ -148,6 +183,7 @@
         document.getElementById('cat-btn-icon').innerHTML = '';
         document.getElementById('cat-btn-label').textContent = 'Pilih Kategori';
         document.getElementById('custom-wrap').classList.add('hidden');
+        selectPriority('medium', 'priority-dropdown', 'priority-select', 'priority-btn-dot', 'priority-btn-label');
         toast('Tugas ditambahkan!');
         await loadTasks();
       } catch(e) { toast(e.message,'err'); }
@@ -219,6 +255,10 @@
       
       document.getElementById('edit-deadline').value = t.deadline ? toLocalDatetimeValue(t.deadline) : '';
       
+      const priority = t.priority || 'medium';
+      document.getElementById('edit-priority-select').value = priority;
+      selectPriority(priority, 'edit-priority-dropdown', 'edit-priority-select', 'edit-priority-btn-dot', 'edit-priority-btn-label');
+      
       show('edit-modal');
       setTimeout(() => document.getElementById('edit-title').focus(), 50);
     }
@@ -230,9 +270,10 @@
       const category   = document.getElementById('edit-cat').value;
       const customEl   = document.getElementById('edit-custom');
       const deadlineEl = document.getElementById('edit-deadline');
+      const priority   = document.getElementById('edit-priority-select').value;
       if (!title) { toast('Judul wajib diisi!','err'); return; }
       if (category==='other' && !customEl.value.trim()) { toast('Isi kategori kustom!','err'); return; }
-      const body = { title, category };
+      const body = { title, category, priority };
       if (category==='other') body.custom_category = customEl.value.trim();
       body.deadline = deadlineEl.value ? new Date(deadlineEl.value).toISOString() : null;
       try {
@@ -322,9 +363,15 @@
       if (recent.length) {
         recentEl.innerHTML = recent.map(t => {
           const isDone = t.status === 'done';
+          const priority = t.priority || 'medium';
+          const priorityColors = {
+            high: 'text-red-400',
+            medium: 'text-yellow-400',
+            low: 'text-green-400'
+          };
           const dot = isDone
             ? `<svg class="w-2 h-2 text-green-400 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>`
-            : `<svg class="w-2 h-2 text-yellow-400 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>`;
+            : `<svg class="w-2 h-2 ${priorityColors[priority]} flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>`;
           return `<div class="flex items-start gap-2 text-sm py-2 border-b border-gray-700 last:border-0">
             ${dot}
             <span class="flex-1 ${isDone ? 'line-through text-gray-600' : 'text-gray-300'}">${esc(t.title)}</span>
@@ -385,6 +432,17 @@
         const dateStr   = t.created_at
           ? new Date(t.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})
           : '';
+        
+        // Priority badge
+        const priority = t.priority || 'medium';
+        const priorityColors = {
+          high: 'bg-red-900/30 text-red-400 border-red-500/50',
+          medium: 'bg-amber-900/30 text-amber-400 border-amber-500/50',
+          low: 'bg-green-900/30 text-green-400 border-green-500/50'
+        };
+        const priorityLabels = { high: 'High', medium: 'Medium', low: 'Low' };
+        const priorityDots = { high: 'bg-red-400', medium: 'bg-amber-400', low: 'bg-green-400' };
+        
         return `
         <div class="task-item ${isDone?'task-done':''} group flex items-start gap-3 bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-gray-600 rounded-xl px-4 py-3 transition" data-id="${t.id}">
           <button onclick="toggleTask(${t.id})" title="${isDone?'Tandai belum selesai':'Tandai selesai'}"
@@ -396,6 +454,10 @@
             <p class="task-title text-sm font-medium text-white leading-snug">${esc(t.title)}</p>
             <div class="flex items-center gap-2 mt-1.5 flex-wrap">
               <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${catColor}">${esc(catLabel)}</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${priorityColors[priority]}">
+                <span class="w-1.5 h-1.5 rounded-full ${priorityDots[priority]}"></span>
+                ${priorityLabels[priority]}
+              </span>
               ${dateStr ? `<span class="text-gray-600 text-xs">${dateStr}</span>` : ''}
               ${t.deadline ? `<span class="inline-flex items-center gap-1 text-xs font-medium ${isOverdue(t.deadline, t.status) ? 'text-red-400' : 'text-amber-400'}">
                 <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -772,6 +834,18 @@
           if (!sidebar.contains(e.target) && !burgerBtn) {
             sidebar.classList.remove('show');
           }
+        }
+      });
+      
+      // Close dropdowns when clicking outside
+      document.addEventListener('click', (e) => {
+        const priorityBtn = e.target.closest('#priority-dropdown-wrap');
+        const editPriorityBtn = e.target.closest('#edit-priority-dropdown-wrap');
+        const catBtn = e.target.closest('#cat-dropdown-wrap');
+        const editCatBtn = e.target.closest('#edit-cat-dropdown-wrap');
+        
+        if (!priorityBtn && !editPriorityBtn && !catBtn && !editCatBtn) {
+          closeAllDropdowns();
         }
       });
       
