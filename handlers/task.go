@@ -16,7 +16,7 @@ func GetTasks(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("userID").(int)
 
 	rows, err := config.DB.Query(
-		"SELECT id, user_id, title, category, custom_category, status, deadline, created_at, updated_at FROM tasks WHERE user_id = ?", userID)
+		"SELECT id, user_id, title, category, priority, custom_category, status, deadline, created_at, updated_at FROM tasks WHERE user_id = ? ORDER BY created_at DESC", userID)
 	if err != nil {
 		helpers.WriteJSON(w, 500, map[string]any{"status": "error", "message": "Gagal ambil data"})
 		return
@@ -26,7 +26,7 @@ func GetTasks(w http.ResponseWriter, r *http.Request) {
 	tasks := []models.Task{}
 	for rows.Next() {
 		var t models.Task
-		rows.Scan(&t.ID, &t.UserID, &t.Title, &t.Category, &t.CustomCategory, &t.Status, &t.Deadline, &t.CreatedAt, &t.UpdatedAt)
+		rows.Scan(&t.ID, &t.UserID, &t.Title, &t.Category, &t.Priority, &t.CustomCategory, &t.Status, &t.Deadline, &t.CreatedAt, &t.UpdatedAt)
 		tasks = append(tasks, t)
 	}
 
@@ -40,8 +40,8 @@ func GetTaskByID(w http.ResponseWriter, r *http.Request) {
 
 	var t models.Task
 	err := config.DB.QueryRow(
-		"SELECT id, user_id, title, category, custom_category, status, deadline, created_at, updated_at FROM tasks WHERE id = ? AND user_id = ?", id, userID).
-		Scan(&t.ID, &t.UserID, &t.Title, &t.Category, &t.CustomCategory, &t.Status, &t.Deadline, &t.CreatedAt, &t.UpdatedAt)
+		"SELECT id, user_id, title, category, priority, custom_category, status, deadline, created_at, updated_at FROM tasks WHERE id = ? AND user_id = ?", id, userID).
+		Scan(&t.ID, &t.UserID, &t.Title, &t.Category, &t.Priority, &t.CustomCategory, &t.Status, &t.Deadline, &t.CreatedAt, &t.UpdatedAt)
 
 	if err != nil {
 		helpers.WriteJSON(w, 404, map[string]any{"status": "error", "message": "Task tidak ditemukan"})
@@ -74,9 +74,15 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 		req.CustomCategory = nil
 	}
 
+	// Default priority ke medium kalau kosong
+	priority := req.Priority
+	if priority == "" {
+		priority = "medium"
+	}
+
 	result, err := config.DB.Exec(
-		"INSERT INTO tasks (user_id, title, category, custom_category, status, deadline) VALUES (?, ?, ?, ?, 'pending', ?)",
-		userID, req.Title, req.Category, req.CustomCategory, req.Deadline)
+		"INSERT INTO tasks (user_id, title, category, priority, custom_category, status, deadline) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
+		userID, req.Title, req.Category, priority, req.CustomCategory, req.Deadline)
 	if err != nil {
 		helpers.WriteJSON(w, 500, map[string]any{"status": "error", "message": "Gagal membuat task"})
 		return
@@ -110,6 +116,12 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
 		req.CustomCategory = nil
 	}
 
+	// Default priority ke medium kalau kosong
+	priority := req.Priority
+	if priority == "" {
+		priority = "medium"
+	}
+
 	// Cek dulu apakah task ada
 	var exists int
 	err := config.DB.QueryRow("SELECT COUNT(*) FROM tasks WHERE id=? AND user_id=?", id, userID).Scan(&exists)
@@ -119,8 +131,8 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = config.DB.Exec(
-		"UPDATE tasks SET title=?, category=?, custom_category=?, deadline=? WHERE id=? AND user_id=?",
-		req.Title, req.Category, req.CustomCategory, req.Deadline, id, userID)
+		"UPDATE tasks SET title=?, category=?, priority=?, custom_category=?, deadline=?, updated_at=NOW() WHERE id=? AND user_id=?",
+		req.Title, req.Category, priority, req.CustomCategory, req.Deadline, id, userID)
 	if err != nil {
 		helpers.WriteJSON(w, 500, map[string]any{"status": "error", "message": "Gagal update task"})
 		return
