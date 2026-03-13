@@ -1,0 +1,4 @@
+node_modules/
+static/src/output.css
+.env
+env.txt
