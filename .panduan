@@ -11,7 +11,7 @@ PERSIAPAN (sekali saja):
    JWT_SECRET=rahasia_jwt_kamu
    PORT=8081
    APP_NAME=apk_todolist
-   APP_ENV=development
+   APP_ENV=development, catatan untuk env harus memakai salah satu env jika ingin pake yang hosting pake yang ini. Kalo pengen tetep pake yang mysql pake yang env sebelumnya.
 
 MENJALANKAN APP:
 1. Buka terminal di folder project
