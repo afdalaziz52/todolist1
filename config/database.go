@@ -1,4 +1,4 @@
-ini masih pake yang sebelumnya ya package config
+package config
 import (
     "database/sql"
     "fmt"
