@@ -1,0 +1,7 @@
+kalo mau run 
+"go run main.go"
+
+kalo mau di hosting sementara ketik 
+"~/Downloads/cloudflared-windows-amd64.exe tunnel --url http://localhost:8081"
+
+jangan lupa import database nya
